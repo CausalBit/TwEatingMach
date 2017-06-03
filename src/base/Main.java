@@ -1,4 +1,4 @@
-package com.io;
+package base;
 
 public class Main {
 
