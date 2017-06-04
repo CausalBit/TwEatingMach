@@ -8,7 +8,13 @@ import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.BasicClient;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
+import org.apache.commons.io.FileUtils;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
+import java.io.File;
+import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -26,11 +32,12 @@ public class TwitterSource {
     BlockingQueue<String> queue;
 
     public TwitterSource(){
-
+        /*
         consumerKey = "2ylE4rRu1gjQ2bPP598FRJ3Hy";
         consumerSecret = "PT50AmclEIfeP2GzZISgYglkvdG45YGCKTdLJrpcFdoAdzvtI7";
         token = "871044421994905605-dL889t3gt0n8HY5oei1tP709ddYaZP1";
-        secret = "BCmhDDVvrVad7LzDcQn5YrlCDmzSRNps4yX5NJ2E13OQh";
+        secret = "BCmhDDVvrVad7LzDcQn5YrlCDmzSRNps4yX5NJ2E13OQh";*/
+        updateLogin();
 
         keepStreaming = true;
         queue = new LinkedBlockingQueue<String>(10000);
@@ -86,7 +93,7 @@ public class TwitterSource {
                 .build();
 
         //Start the connection.
-        client.connect();
+       // client.connect();
         //For now let's set up a counter instead of a timer.
         int total = 10000;
         // Keep the connection open as long as we want to.
@@ -102,7 +109,7 @@ public class TwitterSource {
             if(total == 0){ keepStreaming = false; }
         }
         //Stop the connection.
-        client.stop();
+      //  client.stop();
     }
 
     public void stopStreaming(){
@@ -126,6 +133,26 @@ public class TwitterSource {
         }catch(Exception e){
             //e.printStackTrace();
             return "FAIL"; //TODO handle this exception gracefully like swan, but fiercely like a lioness.
+        }
+    }
+
+    public void updateLogin(){
+       JSONParser parser = new JSONParser();
+
+        try {
+
+            Object obj = parser.parse(new FileReader(
+                    "/home/irvin/Documents/Universidad/VIISemester/BasesII/Proyecto/TwEatingMach/src/main/java/com/tweatingmach/twitterLogin.txt"));
+
+            JSONObject jsonObject = (JSONObject) obj;
+
+            consumerKey = (String) jsonObject.get("consumerKey");
+            consumerSecret = (String) jsonObject.get("consumerSecret");
+            token = (String) jsonObject.get("token");
+            secret = (String) jsonObject.get("secret");
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
