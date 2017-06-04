@@ -32,11 +32,7 @@ public class TwitterSource {
     BlockingQueue<String> queue;
 
     public TwitterSource(){
-        /*
-        consumerKey = "2ylE4rRu1gjQ2bPP598FRJ3Hy";
-        consumerSecret = "PT50AmclEIfeP2GzZISgYglkvdG45YGCKTdLJrpcFdoAdzvtI7";
-        token = "871044421994905605-dL889t3gt0n8HY5oei1tP709ddYaZP1";
-        secret = "BCmhDDVvrVad7LzDcQn5YrlCDmzSRNps4yX5NJ2E13OQh";*/
+
         updateLogin();
 
         keepStreaming = true;
@@ -141,8 +137,7 @@ public class TwitterSource {
 
         try {
 
-            Object obj = parser.parse(new FileReader(
-                    "/home/irvin/Documents/Universidad/VIISemester/BasesII/Proyecto/TwEatingMach/src/main/java/com/tweatingmach/twitterLogin.txt"));
+            Object obj = parser.parse(new FileReader("./src/main/java/com/tweatingmach/twitterLogin.txt"));
 
             JSONObject jsonObject = (JSONObject) obj;
 
