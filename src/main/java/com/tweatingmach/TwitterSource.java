@@ -2,16 +2,17 @@ package com.tweatingmach;
 
 import com.twitter.hbc.ClientBuilder;
 import com.twitter.hbc.core.Constants;
-import com.twitter.hbc.core.endpoint.StatusesSampleEndpoint;
+import com.twitter.hbc.core.endpoint.Location;
+import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
 import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.BasicClient;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-
 /**
  * Created by irvin on 6/3/17.
  */
@@ -21,52 +22,110 @@ public class TwitterSource {
     private String token;
     private String secret;
 
+    private boolean keepStreaming;
+    BlockingQueue<String> queue;
+
     public TwitterSource(){
+
+        consumerKey = "2ylE4rRu1gjQ2bPP598FRJ3Hy";
+        consumerSecret = "PT50AmclEIfeP2GzZISgYglkvdG45YGCKTdLJrpcFdoAdzvtI7";
+        token = "871044421994905605-dL889t3gt0n8HY5oei1tP709ddYaZP1";
+        secret = "BCmhDDVvrVad7LzDcQn5YrlCDmzSRNps4yX5NJ2E13OQh";
+
+        keepStreaming = true;
+        queue = new LinkedBlockingQueue<String>(10000);
 
     }
 
-    public void Feed() throws InterruptedException{
-        // Create an appropriately sized blocking queue
-        BlockingQueue<String> queue = new LinkedBlockingQueue<String>(10000);
+    public void Feed(List<String> filterTerms, List<Location> locations ) throws InterruptedException{
 
-        // Define our endpoint: By default, delimited=length is set (we need this for our processor)
-        // and stall warnings are on.
-        StatusesSampleEndpoint endpoint = new StatusesSampleEndpoint();
-        endpoint.stallWarnings(false);
 
+        //Use this end point to receive the tweets.
+        StatusesFilterEndpoint endpoint = new StatusesFilterEndpoint();
+        endpoint.stallWarnings(false);  //Avoid pulling the stalling warnings.
+
+
+        /**TRACKING TERMS
+         * The text of the Tweet and some entity fields are considered for matches.
+         * Specifically, the text attribute of the Tweet, expanded_url and display_url
+         * for links and media, text for hashtags, and screen_name for user mentions are checked for matches.
+         */
+        //endpoint.trackTerms(filterTerms);
+
+
+        /**LOCATION
+        A comma-separated list of longitude,latitude pairs specifying a set of bounding boxes to filter
+        Tweets by. Only geolocated Tweets falling within the requested bounding boxes will be
+        included—unlike the Search API, the user’s location field is not used to filter Tweets.
+
+        Each bounding box should be specified as a pair of longitude and latitude pairs, with the
+        southwest corner of the bounding box coming first. For example:
+                -122.75,36.8,-121.75,37.8 	-> San Francisco
+        */
+        Location.Coordinate southWestCoordinate = new Location.Coordinate(-122.75,36.8);
+        Location.Coordinate northEastCoordinate = new Location.Coordinate(-121.75,37.8);
+        Location sanFrancisco = new Location(southWestCoordinate, northEastCoordinate);
+
+        //We can actually make a list of locations to pass it into trackLocations...
+        //Lets use the example, instead of the one from the arguments.
+        List<Location> locationsExample = new ArrayList<Location>();
+        locationsExample.add(sanFrancisco);
+
+        endpoint.locations(locationsExample);
+
+        //This is to access the tweets.
         Authentication auth = new OAuth1(consumerKey, consumerSecret, token, secret);
-        //Authentication auth = new com.twitter.hbc.httpclient.auth.BasicAuth(username, password);
 
-        // Create a new BasicClient. By default gzip is enabled.
+
         BasicClient client = new ClientBuilder()
-                .name("sampleExampleClient")
+                .name("TEMClient")
                 .hosts(Constants.STREAM_HOST)
                 .endpoint(endpoint)
                 .authentication(auth)
                 .processor(new StringDelimitedProcessor(queue))
                 .build();
 
-        // Establish a connection
+        //Start the connection.
         client.connect();
+        //For now let's set up a counter instead of a timer.
+        int total = 10000;
+        // Keep the connection open as long as we want to.
+        while(keepStreaming) {
 
-        // Do whatever needs to be done with messages
-        for (int msgRead = 0; msgRead < 1000; msgRead++) {
             if (client.isDone()) {
-                System.out.println("Client connection closed unexpectedly: " + client.getExitEvent().getMessage());
+                System.out.println("Connections closed! : " + client.getExitEvent().getMessage());
                 break;
             }
 
-            String msg = queue.poll(5, TimeUnit.SECONDS);
-            if (msg == null) {
-                System.out.println("Did not receive a message in 5 seconds");
-            } else {
-                System.out.println(msg);
+            //For now let's set up a counter instead of a timer.
+            total--;
+            if(total == 0){ keepStreaming = false; }
+        }
+        //Stop the connection.
+        client.stop();
+    }
+
+    public void stopStreaming(){
+        keepStreaming = false;
+    }
+
+    public void readStream(){
+        while(!queue.isEmpty()){
+            try {
+                String message = queue.take();
+                System.out.println(message);
+            }catch(Exception e){
+                //e.printStackTrace();
             }
         }
+    }
 
-        client.stop();
-
-        // Print some stats
-        System.out.printf("The client read %d messages!\n", client.getStatsTracker().getNumMessages());
+    public String getMessage(){
+        try {
+            return queue.take();
+        }catch(Exception e){
+            //e.printStackTrace();
+            return "FAIL"; //TODO handle this exception gracefully like swan, but fiercely like a lioness.
+        }
     }
 }
