@@ -8,6 +8,7 @@ import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.BasicClient;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
+import org.apache.commons.collections.iterators.ObjectArrayIterator;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -19,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Created by irvin on 6/3/17.
  */
@@ -53,7 +56,7 @@ public class TwitterSource {
          * Specifically, the text attribute of the Tweet, expanded_url and display_url
          * for links and media, text for hashtags, and screen_name for user mentions are checked for matches.
          */
-        //endpoint.trackTerms(filterTerms);
+        endpoint.trackTerms(filterTerms);
 
 
         /**LOCATION
@@ -74,7 +77,7 @@ public class TwitterSource {
         List<Location> locationsExample = new ArrayList<Location>();
         locationsExample.add(sanFrancisco);
 
-        endpoint.locations(locationsExample);
+        //endpoint.locations(locationsExample);
 
         //This is to access the tweets.
         Authentication auth = new OAuth1(consumerKey, consumerSecret, token, secret);
@@ -89,9 +92,9 @@ public class TwitterSource {
                 .build();
 
         //Start the connection.
-       // client.connect();
+        client.connect();
         //For now let's set up a counter instead of a timer.
-        int total = 10000;
+        int total = 10;
         // Keep the connection open as long as we want to.
         while(keepStreaming) {
 
@@ -100,12 +103,19 @@ public class TwitterSource {
                 break;
             }
 
-            //For now let's set up a counter instead of a timer.
+            //For now let's set up a counter instead of a timer
+            try{
+                Thread.sleep(1000);
+            }
+            catch(InterruptedException ex)
+            {
+                Thread.currentThread().interrupt();
+            }
             total--;
             if(total == 0){ keepStreaming = false; }
         }
         //Stop the connection.
-      //  client.stop();
+        client.stop();
     }
 
     public void stopStreaming(){
@@ -118,7 +128,7 @@ public class TwitterSource {
                 String message = queue.take();
                 System.out.println(message);
             }catch(Exception e){
-                //e.printStackTrace();
+                e.printStackTrace();
             }
         }
     }

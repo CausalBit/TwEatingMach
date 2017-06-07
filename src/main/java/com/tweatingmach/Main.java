@@ -19,7 +19,7 @@ public class Main {
         terms.add("Trump");
         System.out.println(System.getProperty("java.class.path") );
         try {
-         //  twitt.Feed(terms,null);
+           twitt.Feed(terms,null);
         }catch( Exception e){
             e.printStackTrace();
         }
