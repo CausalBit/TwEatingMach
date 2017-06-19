@@ -12,7 +12,13 @@
 
         <dependency>
             <groupId>com.twitter</groupId>
-            <artifactId>hbc-core</artifactId> <!-- or hbc-twitter4j -->
+            <artifactId>hbc-twitter4j</artifactId> <!-- or  hbc-core-->
+            <version>2.2.0</version> <!-- or whatever the latest version is -->
+        </dependency>
+
+        <dependency>
+            <groupId>com.twitter</groupId>
+            <artifactId>hbc-core</artifactId> <!-- or  hbc-core-->
             <version>2.2.0</version> <!-- or whatever the latest version is -->
         </dependency>
 

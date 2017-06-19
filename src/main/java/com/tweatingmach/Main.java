@@ -1,6 +1,7 @@
 package com.tweatingmach;
 
 
+import com.twitter.hbc.core.endpoint.Location;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
@@ -11,48 +12,48 @@ import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaReceiverInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.twitter.TwitterUtils;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import scala.Tuple2;
-import twitter4j.*;
 
-import java.io.FileReader;
-import java.util.Arrays;
-import java.util.Iterator;
+import java.util.*;
 
 public class Main {
-
     /**
      * Simple wordcount on tweets arriving every 10 seconds
      * @param args
      */
     public static void main(String[] args) {
 
+        List<String> filters = new ArrayList<String>();
+        filters.add("Trump");
+        //We can also add locations from here and pass them as parameters.
 
-        /*
-        JSONParser parser = new JSONParser();
+       /*
+        TwitterSource twitterSource = new TwitterSource();
+
         try {
-            JSONObject jsonObject = (JSONObject) parser.parse(new FileReader("./src/main/java/com/tweatingmach/twitterLogin.txt"));
-            System.setProperty("twitter4j.oauth.consumerKey", (String) jsonObject.get("consumerKey"));
-            System.setProperty("twitter4j.oauth.consumerSecret", (String) jsonObject.get("consumerSecret"));
-            System.setProperty("twitter4j.oauth.accessToken", (String) jsonObject.get("token"));
-            System.setProperty("twitter4j.oauth.accessTokenSecret", (String) jsonObject.get("secret"));
-        } catch (Exception e) {
+            twitterSource.streamData(filters, null);
+        }catch(Exception e){
             e.printStackTrace();
-            return;
         }
+
+        try{
+            Thread.sleep(10000);
+        }
+        catch(InterruptedException ex)
+        {
+            Thread.currentThread().interrupt();
+        }*/
 
         SparkConf conf = new SparkConf().setAppName("TwEatingMachine").setMaster("local[2]");
         JavaStreamingContext jssc = new JavaStreamingContext(conf, Durations.seconds(10)); //set batch interval to 10s
-
-        JavaReceiverInputDStream<Status> stream = TwitterUtils.createStream(jssc);
+        JavaReceiverInputDStream<String> stream = jssc.receiverStream(new JavaTwitterCustomReceiver(filters,null));
 
         //split stream into words
-        JavaDStream<String> words = stream.flatMap(new FlatMapFunction<Status, String>() {
+        JavaDStream<String> words = stream.flatMap(new FlatMapFunction<String, String>() {
             @Override
-            public Iterator<String> call(Status s) {
-                return Arrays.asList(s.getText().split(" ")).iterator();
+            public Iterator<String> call(String s) {
+                System.out.println(s);
+                return Arrays.asList(s.split(" ")).iterator();
             }
         });
 
@@ -90,16 +91,10 @@ public class Main {
             e.printStackTrace();
         }
 
-        */
-
-        
-
-
-        try {
-            twitt.Feed(terms,null);
-        }catch( Exception e){
-            e.printStackTrace();
-        }
+       //twitterSource.readStream();
 
     }
 }
+
+
+
