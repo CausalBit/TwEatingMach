@@ -83,16 +83,16 @@ public class TwitterSource implements java.io.Serializable {
          southwest corner of the bounding box coming first. For example:
          -122.75,36.8,-121.75,37.8 	-> San Francisco
          */
-        Location.Coordinate southWestCoordinate = new Location.Coordinate(-122.75,36.8);
-        Location.Coordinate northEastCoordinate = new Location.Coordinate(-121.75,37.8);
-        Location sanFrancisco = new Location(southWestCoordinate, northEastCoordinate);
+        Location.Coordinate southWestCoordinate = new Location.Coordinate(7.8,-86.5);
+        Location.Coordinate northEastCoordinate = new Location.Coordinate( 11.4,-82.4);
+        Location CostaRica = new Location(southWestCoordinate, northEastCoordinate);
 
         //We can actually make a list of locations to pass it into trackLocations...
         //Lets use the example, instead of the one from the arguments.
         List<Location> locationsExample = new ArrayList<Location>();
-        locationsExample.add(sanFrancisco);
+        locationsExample.add(CostaRica);
 
-        endpoint.locations(locationsExample);
+        //endpoint.locations(locationsExample);
 
         //This is to access the tweets.
         Authentication auth = new OAuth1(consumerKey, consumerSecret, token, secret);

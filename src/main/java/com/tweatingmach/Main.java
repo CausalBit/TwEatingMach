@@ -24,8 +24,25 @@ public class Main {
     public static void main(String[] args) {
 
         List<String> filters = new ArrayList<String>();
-        filters.add("Trump");
-        //We can also add locations from here and pass them as parameters.
+        filters.add("Luis Guillermo Solís");
+        filters.add("@luisguillermosr");
+        /*filters.add("Juan Diego Castro Fernández");
+        filters.add("@JDiegoCastroCR");
+        filters.add("Antonio Álvarez Desanti");
+        filters.add("@desanti1234alv");
+        filters.add("Rodolfo Piza Rocafort ");
+        filters.add("@PizaRodolfo");
+        filters.add("Carlos Alvarado");
+        filters.add("@CarlosAlvQ");
+        filters.add("Edgardo Araya");
+        filters.add("@GardodeCQ");
+        filters.add("Otto Guevara Guth");
+        filters.add("@OttoGuevaraG");*/
+        filters.add("Keylor Navas");
+        filters.add("@NavasKeylor");
+        //filters.add("Hoy");
+        //filters.add("Donald Trump");
+
 
        /*
         TwitterSource twitterSource = new TwitterSource();
@@ -44,7 +61,7 @@ public class Main {
             Thread.currentThread().interrupt();
         }*/
 
-        SparkConf conf = new SparkConf().setAppName("TwEatingMachine").setMaster("local[2]");
+        SparkConf conf = new SparkConf().setAppName("TwEatingMachine").setMaster("local[4]");
         JavaStreamingContext jssc = new JavaStreamingContext(conf, Durations.seconds(10)); //set batch interval to 10s
         JavaReceiverInputDStream<String> stream = jssc.receiverStream(new JavaTwitterCustomReceiver(filters,null));
 
