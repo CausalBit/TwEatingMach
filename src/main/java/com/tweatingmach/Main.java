@@ -27,7 +27,7 @@ public class Main {
     public static void main(String[] args) {
 
         List<String> filters = new ArrayList<String>();
-       /* filters.add("Luis Guillermo Solís");
+        filters.add("Luis Guillermo Solís");
         filters.add("@luisguillermosr");
         filters.add("Juan Diego Castro Fernández");
         filters.add("@JDiegoCastroCR");
@@ -43,8 +43,9 @@ public class Main {
         filters.add("@OttoGuevaraG");
         filters.add("Keylor Navas");
         filters.add("@NavasKeylor");
-        filters.add("Hoy");*/
-        filters.add("Trump");
+        //filters.add("Hoy");
+        //filters.add("Trump");
+        filters.add("Apple");
 
 
        /*
@@ -144,7 +145,7 @@ public class Main {
         });
 
 
-        //Take only original tweets, with geolocation.
+        //Take only original tweets with geolocation.
         JavaDStream<JSONObject> geoTweets = oriSpanishTweets.filter(new Function<JSONObject, Boolean>() {
             @Override
             public Boolean call(JSONObject tweet) {
@@ -154,6 +155,46 @@ public class Main {
                 }else{
                     System.out.println("Coordinates: "+tweet.get("coordinates"));
                     return true;
+                }
+            }
+        });
+
+        //Take only original tweets with geolocation.
+        JavaDStream<JSONObject> tweetsWithCity = oriEnglishTweets.filter(new Function<JSONObject, Boolean>() {
+            @Override
+            public Boolean call(JSONObject tweet) {
+                if(tweet.get("place")==null){
+                    System.out.println("The place is null ");
+                    return false;
+                }else{
+                    JSONObject tweetObject;
+                    try {
+                        tweetObject = (JSONObject)new JSONParser().parse(tweet.get("place").toString());
+                        System.out.println("Place name: "+tweetObject.get("full_name"));
+                    }catch(Exception e){
+                        System.out.println("Exception "+e.getMessage());
+                    }
+                    return true;
+                }
+            }
+        });
+
+        JavaPairDStream<String, Integer> tweetsSentiments = oriEnglishTweets.mapToPair( new PairFunction<JSONObject, String, Integer>() {
+            @Override
+            public Tuple2<String, Integer> call(JSONObject tweet) {
+                String the_tweet = tweet.get("text").toString();
+                if(the_tweet==null){
+                    System.out.println("No tweet");
+                    return new Tuple2<>("No tweet", 0);
+                }else{
+                    NLProcessor sentimentProcessor = new NLProcessor();
+                    sentimentProcessor.initialize();
+                    try{
+                        return new Tuple2<>(the_tweet+": ", sentimentProcessor.findSentiment(the_tweet));
+                    }catch (Exception e){
+                        System.out.println("Error processing sentiment "+e.getMessage());
+                        return new Tuple2<>("No tweet", 0);
+                    }
                 }
             }
         });
@@ -194,7 +235,7 @@ public class Main {
         //print to console
         wordCounts.print();*/
         //oriSpanishTweets.print();
-        geoTweets.print();
+        tweetsSentiments.print();
         //start streaming
         jssc.start();
         try {
