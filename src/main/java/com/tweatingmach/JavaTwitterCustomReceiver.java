@@ -53,7 +53,8 @@ public class JavaTwitterCustomReceiver extends Receiver<String> {
                 String tweet = twitterSource.getTweet();
 
                 if(!tweet.equals("NO-TWEET")) {
-                    safePrintln("Received data '" + tweet + "'");
+                    //safePrintln("Tweet received!");
+                    //safePrint(".");
                     store(tweet);
                 }
             }
@@ -79,6 +80,12 @@ public class JavaTwitterCustomReceiver extends Receiver<String> {
     public void safePrintln(String s) {
         synchronized (System.out) {
             System.out.println(s);
+        }
+    }
+
+    public void safePrint(String s) {
+        synchronized (System.out) {
+            System.out.print(s);
         }
     }
 

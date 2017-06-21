@@ -13,6 +13,7 @@ import com.twitter.hbc.twitter4j.Twitter4jStatusClient;
 import com.twitter.hbc.twitter4j.handler.StatusStreamHandler;
 import com.twitter.hbc.twitter4j.message.DisconnectMessage;
 import com.twitter.hbc.twitter4j.message.StallWarningMessage;
+
 import twitter4j.StatusListener;
 import twitter4j.*;
 import org.json.simple.JSONObject;
@@ -90,7 +91,7 @@ public class TwitterSource implements java.io.Serializable {
         //We can actually make a list of locations to pass it into trackLocations...
         //Lets use the example, instead of the one from the arguments.
         List<Location> locationsExample = new ArrayList<Location>();
-        locationsExample.add(CostaRica);
+        //locationsExample.add(CostaRica);
 
         //endpoint.locations(locationsExample);
 

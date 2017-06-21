@@ -12,6 +12,9 @@ import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaReceiverInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
+
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import scala.Tuple2;
 
 import java.util.*;
@@ -24,9 +27,9 @@ public class Main {
     public static void main(String[] args) {
 
         List<String> filters = new ArrayList<String>();
-        filters.add("Luis Guillermo Solís");
+       /* filters.add("Luis Guillermo Solís");
         filters.add("@luisguillermosr");
-        /*filters.add("Juan Diego Castro Fernández");
+        filters.add("Juan Diego Castro Fernández");
         filters.add("@JDiegoCastroCR");
         filters.add("Antonio Álvarez Desanti");
         filters.add("@desanti1234alv");
@@ -37,11 +40,11 @@ public class Main {
         filters.add("Edgardo Araya");
         filters.add("@GardodeCQ");
         filters.add("Otto Guevara Guth");
-        filters.add("@OttoGuevaraG");*/
+        filters.add("@OttoGuevaraG");
         filters.add("Keylor Navas");
         filters.add("@NavasKeylor");
-        //filters.add("Hoy");
-        //filters.add("Donald Trump");
+        filters.add("Hoy");*/
+        filters.add("Trump");
 
 
        /*
@@ -65,6 +68,97 @@ public class Main {
         JavaStreamingContext jssc = new JavaStreamingContext(conf, Durations.seconds(10)); //set batch interval to 10s
         JavaReceiverInputDStream<String> stream = jssc.receiverStream(new JavaTwitterCustomReceiver(filters,null));
 
+
+        //Parse the text into objects.
+        JavaDStream<JSONObject> tweetObjects = stream.map(new Function<String, JSONObject>() {
+            @Override
+            public JSONObject call(String tweet) {
+                JSONObject tweetObject;
+                try {
+                    tweetObject = (JSONObject)new JSONParser().parse(tweet);
+                    //System.out.println("The tweet: "++""+tweetObject.get("text"));
+                }catch(Exception e){
+                    tweetObject = new JSONObject();
+                }
+                return tweetObject;
+            }
+        });
+
+
+        /*
+        	Users can amplify the broadcast of Tweets authored by other users by retweeting .
+        	Retweets can be distinguished from typical Tweets by the existence of a
+        	retweeted_status attribute. This attribute contains a representation of the original
+        	Tweet that was retweeted. Note that retweets of retweets do not show representations
+        	of the intermediary retweet, but only the original Tweet. (Users can also unretweet
+        	a retweet they created by deleting their retweet.)
+        */
+
+        //Take only the non retweets.
+        JavaDStream<JSONObject> originalTweets = tweetObjects.filter(new Function<JSONObject, Boolean>() {
+            @Override
+            public Boolean call(JSONObject tweet) {
+                if(tweet.containsKey("retweeted_status")){
+                    //System.out.println("Retweeted!");
+                    return false;
+                }else{
+                    //System.out.println("I am not retweeted");
+                    return true;
+                }
+            }
+        });
+
+
+        //Take only original in English
+        JavaDStream<JSONObject> oriEnglishTweets = originalTweets.filter(new Function<JSONObject, Boolean>() {
+            @Override
+            public Boolean call(JSONObject tweet) {
+                if(tweet.get("lang").equals("en")){
+                    System.out.println("English detected");
+                    return true;
+                }else{
+                    System.out.println("I am not in english");
+                    return false;
+                }
+            }
+        });
+
+
+        //Take only original in spanish
+        JavaDStream<JSONObject> oriSpanishTweets = originalTweets.filter(new Function<JSONObject, Boolean>() {
+            @Override
+            public Boolean call(JSONObject tweet) {
+                try {
+                    if (tweet.get("lang").equals("es")) {
+                        System.out.println("Spanish detected ");
+                        return true;
+                    } else {
+                        //System.out.println("I am not in Spanish");
+                        return false;
+                    }
+                }catch (NullPointerException e){
+                    System.out.println("Exception "+e.getMessage());
+                    return false;
+                }
+            }
+        });
+
+
+        //Take only original tweets, with geolocation.
+        JavaDStream<JSONObject> geoTweets = oriSpanishTweets.filter(new Function<JSONObject, Boolean>() {
+            @Override
+            public Boolean call(JSONObject tweet) {
+                if(tweet.get("coordinates")==null){
+                    //System.out.println("I have no coordinates: "+tweet.get("coordinates"));
+                    return false;
+                }else{
+                    System.out.println("Coordinates: "+tweet.get("coordinates"));
+                    return true;
+                }
+            }
+        });
+
+/*
         //split stream into words
         JavaDStream<String> words = stream.flatMap(new FlatMapFunction<String, String>() {
             @Override
@@ -98,8 +192,9 @@ public class Main {
                 });
 
         //print to console
-        wordCounts.print();
-
+        wordCounts.print();*/
+        //oriSpanishTweets.print();
+        geoTweets.print();
         //start streaming
         jssc.start();
         try {
