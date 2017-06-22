@@ -16,6 +16,7 @@ import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import scala.Tuple2;
+import java.lang.reflect.Array;
 
 import java.util.*;
 
@@ -27,7 +28,7 @@ public class Main {
     public static void main(String[] args) {
 
         List<String> filters = new ArrayList<String>();
-        filters.add("Luis Guillermo Solís");
+        /*filters.add("Luis Guillermo Solís");
         filters.add("@luisguillermosr");
         filters.add("Juan Diego Castro Fernández");
         filters.add("@JDiegoCastroCR");
@@ -42,10 +43,15 @@ public class Main {
         filters.add("Otto Guevara Guth");
         filters.add("@OttoGuevaraG");
         filters.add("Keylor Navas");
-        filters.add("@NavasKeylor");
+        filters.add("@NavasKeylor");*/
         //filters.add("Hoy");
         //filters.add("Trump");
-        filters.add("Apple");
+        //filters.add("Apple");
+        filters.add("gameOfThrones");
+        filters.add("game of thrones");
+        filters.add("winterIsHere");
+
+
 
 
        /*
@@ -114,7 +120,9 @@ public class Main {
         JavaDStream<JSONObject> oriEnglishTweets = originalTweets.filter(new Function<JSONObject, Boolean>() {
             @Override
             public Boolean call(JSONObject tweet) {
-                if(tweet.get("lang").equals("en")){
+                if(tweet.get("lang")==null){
+                    return false;
+                }else if(tweet.get("lang").equals("en")){
                     System.out.println("English detected");
                     return true;
                 }else{
@@ -130,7 +138,9 @@ public class Main {
             @Override
             public Boolean call(JSONObject tweet) {
                 try {
-                    if (tweet.get("lang").equals("es")) {
+                    if(tweet.get("lang")==null){
+                        return false;
+                    }else if (tweet.get("lang").equals("es")) {
                         System.out.println("Spanish detected ");
                         return true;
                     } else {
@@ -196,6 +206,13 @@ public class Main {
                         return new Tuple2<>("No tweet", 0);
                     }
                 }
+            }
+        });
+
+        JavaPairDStream<Integer, Integer> sentimentsCounter = tweetsSentiments.mapToPair(new PairFunction<Tuple2<String, Integer>, Integer, Integer>() {
+            @Override
+            public Tuple2<Integer, Integer> call(Tuple2<String, Integer> tweetWithSentiment ){
+                return new Tuple2<>(tweetWithSentiment._2, 1);
             }
         });
 
