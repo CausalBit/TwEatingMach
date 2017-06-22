@@ -1,12 +1,11 @@
+
 package com.tweatingmach;
 
 
-import com.twitter.hbc.core.endpoint.Location;
+import org.apache.spark.Accumulator;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.function.FlatMapFunction;
-import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.function.*;
 import org.apache.spark.streaming.*;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
@@ -16,7 +15,6 @@ import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import scala.Tuple2;
-import java.lang.reflect.Array;
 
 import java.util.*;
 
@@ -28,31 +26,12 @@ public class Main {
     public static void main(String[] args) {
 
         List<String> filters = new ArrayList<String>();
-        /*filters.add("Luis Guillermo Solís");
-        filters.add("@luisguillermosr");
-        filters.add("Juan Diego Castro Fernández");
-        filters.add("@JDiegoCastroCR");
-        filters.add("Antonio Álvarez Desanti");
-        filters.add("@desanti1234alv");
-        filters.add("Rodolfo Piza Rocafort ");
-        filters.add("@PizaRodolfo");
-        filters.add("Carlos Alvarado");
-        filters.add("@CarlosAlvQ");
-        filters.add("Edgardo Araya");
-        filters.add("@GardodeCQ");
-        filters.add("Otto Guevara Guth");
-        filters.add("@OttoGuevaraG");
-        filters.add("Keylor Navas");
-        filters.add("@NavasKeylor");*/
-        //filters.add("Hoy");
-        //filters.add("Trump");
-        //filters.add("Apple");
-        filters.add("gameOfThrones");
         filters.add("game of thrones");
-        filters.add("winterIsHere");
-
-
-
+        filters.add("Game of Thrones");
+        filters.add("#GoT");
+        filters.add("#winterishere");
+        filters.add("#winteriscoming");
+        filters.add("#gameofthrones");
 
        /*
         TwitterSource twitterSource = new TwitterSource();
@@ -74,6 +53,10 @@ public class Main {
         SparkConf conf = new SparkConf().setAppName("TwEatingMachine").setMaster("local[4]");
         JavaStreamingContext jssc = new JavaStreamingContext(conf, Durations.seconds(10)); //set batch interval to 10s
         JavaReceiverInputDStream<String> stream = jssc.receiverStream(new JavaTwitterCustomReceiver(filters,null));
+
+        ArrayList<Accumulator<Integer>> acc = new ArrayList<>();
+        for(int i = 0; i < 5; i++)
+            acc.add(jssc.sparkContext().accumulator(0));
 
 
         //Parse the text into objects.
@@ -209,50 +192,40 @@ public class Main {
             }
         });
 
-        JavaPairDStream<Integer, Integer> sentimentsCounter = tweetsSentiments.mapToPair(new PairFunction<Tuple2<String, Integer>, Integer, Integer>() {
-            @Override
-            public Tuple2<Integer, Integer> call(Tuple2<String, Integer> tweetWithSentiment ){
-                return new Tuple2<>(tweetWithSentiment._2, 1);
-            }
-        });
+        //MAP for sentiment frequency count
+        JavaPairDStream<Integer, Integer> sentimentPair = tweetsSentiments.mapToPair(
+            new PairFunction<Tuple2<String, Integer>, Integer, Integer>() {
+                @Override
+                public Tuple2<Integer, Integer> call(Tuple2<String, Integer> t) {
+                    return new Tuple2<>(t._2, 1);
+                }
+            });
 
-/*
-        //split stream into words
-        JavaDStream<String> words = stream.flatMap(new FlatMapFunction<String, String>() {
-            @Override
-            public Iterator<String> call(String s) {
-                System.out.println(s);
-                return Arrays.asList(s.split(" ")).iterator();
-            }
-        });
-
-        //UNUSED filter by hashtags
-        JavaDStream<String> hashTags = words.filter(new Function<String, Boolean>() {
-            @Override
-            public Boolean call(String word) {
-                return word.startsWith("#");
-            }
-        });
-
-        //MAP
-        JavaPairDStream<String, Integer> pairs = words.mapToPair(
-                new PairFunction<String, String, Integer>() {
-                    @Override public Tuple2<String, Integer> call(String s) {
-                        return new Tuple2<>(s, 1);
-                    }
-                });
-        //REDUCE
-        JavaPairDStream<String, Integer> wordCounts = pairs.reduceByKey(
+        //REDUCE for sentiment frequency count
+        JavaPairDStream<Integer, Integer> sentimentCount = sentimentPair.reduceByKey(
                 new Function2<Integer, Integer, Integer>() {
                     @Override public Integer call(Integer i1, Integer i2) {
                         return i1 + i2;
                     }
                 });
 
-        //print to console
-        wordCounts.print();*/
-        //oriSpanishTweets.print();
+        //Accumulate
+        sentimentCount.foreachRDD(
+                new VoidFunction<JavaPairRDD<Integer, Integer>>() {
+                    @Override
+                    public void call(JavaPairRDD<Integer, Integer> pair) {
+                        Map<Integer, Integer> map = pair.collectAsMap();
+                        for(int i = 0; i < 5; i++) {
+                            if(map.containsKey(i))
+                                acc.get(i).add(map.get(i));
+                            System.out.println("Acc " + i + ": " + acc.get(i).value().toString());
+                        }
+                    }
+                }
+        );
+
         tweetsSentiments.print();
+
         //start streaming
         jssc.start();
         try {
@@ -260,11 +233,7 @@ public class Main {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
-       //twitterSource.readStream();
-
     }
 }
-
 
 
